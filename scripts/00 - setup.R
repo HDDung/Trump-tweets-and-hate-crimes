@@ -1,11 +1,12 @@
-# Efficient Data Management in R
-
 ##### Setup
 
 ## ----setup----
 ## Save package names as a vector of strings
 pkgs <-
   c(
+    "xml2",
+    "rvest",
+    "robotstxt",
     "rtweet",
     "tidyverse",
     "tidyr",
@@ -39,6 +40,4 @@ pkgs <-
 ## Install uninstalled packages
 lapply(pkgs[!(pkgs %in% installed.packages())], install.packages)
 
-## Load all packages to library and adjust options
-lapply(pkgs, library, character.only = TRUE)
 
