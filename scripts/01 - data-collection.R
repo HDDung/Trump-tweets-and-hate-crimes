@@ -1,5 +1,5 @@
 ### Step 1: import data from twitter csv
-source("./scripts/data-collection-scripts/01 - Twitter-data-collection-FBI.R")
+source("scripts/data-collection/01 - Twitter-data-collection.R")
 ## input: 
 ## output: 
     ## trump-tweets.RData
