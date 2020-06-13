@@ -1,31 +1,32 @@
 library(rtweet)
-library(twitteR)
 library(readr)
+library(twitteR)
 
-## setup twitter authentication
-# setup_twitter_oauth(
-#   consumer_key    = "",
-#   consumer_secret  = "",
-#   access_token     = "",
-#   access_secret    = ""
-# )
-# create_token(
-#   app = "fcdd-course",
-#   consumer_key = "",
-#   consumer_secret = "",
-#   access_token = "",
-#   access_secret = ""
-# )
+# setup twitter authentication
+
+create_token(
+  app = "trump-details",
+  consumer_key    = "1f1kYYGptyKnwauuMR5Fo6QTX",
+  consumer_secret  = "Rkf7NJvt7B1BzEPy8zCd79qI4HUhRrzUP63mD8zHUDWq70uwzC",
+  access_token     = "1243602264843042820-s3rFUNlgBTrf33cbQDRwM3TpMROQnI",
+  access_secret    = "QtOQmvBHiyVWTYTVHnzkS5vZhcVfoQzEWHR3h37a1b4hB"
+)
 
 
-## Load Trump's tweets
-# trump_tweets <-
-#   read_csv("raw-data/trump_tweets.csv",
-#            col_types = cols(date = col_datetime(format = "%Y-%m-%d %H:%M"),
-#                             id = col_character()))
 
 
-## Loading tweets related to Trump's speech
+trump_flw_first_round <- get_followers("realDonaldTrump", n = 75000, retryonratelimit = TRUE)
+trump_flw_first_round
+View(trump_flw_first_round)
+trump_flw_data <- lookup_users(trump_flw_first_round$user_id)
+
+write.csv(trump_flw_first_round,
+            file = "processed-data/Trump_follower_IDs.csv")
+trump_flw <- get_followers("realDonaldTrump", n = 820000, retryonratelimit = TRUE)
+
+View(trump_flw_data)
+write.csv(trump_flw_data$screen_name,
+          file="processed-data/Trump_follower_ScreenName.csv", row.names = FALSE)
 
 #state_codes <- c("AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY")
 state_codes <- c("A", "B")
