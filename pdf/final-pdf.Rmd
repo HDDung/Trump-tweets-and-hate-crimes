@@ -20,6 +20,7 @@ library(ggrepel)
 hate_crime <- read_csv("../raw-data/hate_crime.csv") 
 data_HateCrimeTrump <- read_csv("../processed-data/data_HateCrimeTrump.csv")
 twitter_usage <- read_csv("../raw-data/twitter_usage_yearly.csv")
+
 freq_neg_trump_hispanic <- read_csv("../processed-data/freq_neg_trump_hispanic.csv")
 freq_neg_trump_chinese <- read_csv("../processed-data/freq_neg_trump_chinese.csv")
 
@@ -222,7 +223,7 @@ freq_trump_hispanic %>%
 ```{r}
 freq_trump_chinese <- freq_neg_trump_chinese
 freq_trump_chinese$state <- "CA"
-for (state in unique(usa_tweets_hispanic$state)){
+for (state in unique(usa_tweets_coronavirus$state)){
   if (state != "CA"){
     tmp <- freq_neg_trump_chinese
     tmp$state <- state
@@ -234,10 +235,12 @@ for (state in unique(usa_tweets_hispanic$state)){
 
 freq_trump_chinese %>%
   left_join(usa_tweets_coronavirus %>%
+              add_row(date = as.Date("2020-03-16"))  %>%
               mutate(week = cut.Date(date, breaks = "1 week", labels = FALSE)) %>%
               arrange(date, week) %>%
+              filter(!is.na(WordCount)) %>%
               group_by(week, state) %>%
-              summarise(sentiment = mean(SentimentGI))) %>%
+              summarise(sentiment = mean(SentimentGI, na.rm = TRUE))) %>%
   group_by(week) %>%
   summarise(NegTrumpTweets_pct_share = sum(freq)/n(),
             mean_sentiment = mean(sentiment, na.rm = TRUE)) %>%
@@ -249,10 +252,12 @@ freq_trump_chinese %>%
 ```{r}
 freq_trump_chinese %>%
   left_join(usa_tweets_coronavirus %>%
+              add_row(date = as.Date("2020-03-16"))  %>%
               mutate(week = cut.Date(date, breaks = "1 week", labels = FALSE)) %>%
               arrange(date, week) %>%
+              filter(!is.na(WordCount)) %>%
               group_by(week, state) %>%
-              summarise(negative_tweets = sum(SentimentGI < 0))) %>%
+              summarise(negative_tweets = sum(SentimentGI < 0, na.rm = TRUE))) %>%
   group_by(week) %>%
   summarise(NegTrumpTweets_pct_share = sum(freq)/n(),
             total_neg_tweets = sum(negative_tweets, na.rm = TRUE)) %>%
