@@ -1,0 +1,372 @@
+---
+title: "Untitled"
+author: "Anina"
+date: "4 6 2020"
+output: pdf_document
+---
+
+
+Load Packages 
+
+
+```{r}
+install.packages("readr")
+library(readr)
+library(tidyverse)
+library(dplyr)
+
+```
+
+
+Poverty Rate. 2013-2018
+
+```{r setup, include=FALSE}
+poverty <- read.csv("Poverty_Status_ACS5_2018.csv", header=TRUE)
+View(poverty)
+
+poverty <- poverty %>%
+  select(NAME, S1701_C03_001E) %>%
+  rename(pct_below_poverty_level = S1701_C03_001E, state=NAME) %>%
+  slice(-c(1))
+
+poverty$pct_below_poverty_level <- as.numeric(levels(poverty$pct_below_poverty_level))[poverty$pct_below_poverty_level]
+str(poverty)
+
+```
+
+
+
+Employment Status & Income. 2013-2018
+
+```{r setup, include=FALSE}
+empl_HHincome <- read.csv("EmploymentStatus_HHIncome_ACS5_2018.csv", header=TRUE)
+View(empl_HHincome)
+
+empl_HHincome <- empl_HHincome %>%
+  select(NAME, DP03_0009PE, DP03_0063E) %>%
+  rename(state=NAME, unemplyment_rate = DP03_0009PE, mean_HH_income = DP03_0063E) %>%
+  slice(-c(1))
+
+str(empl_HHincome)
+
+empl_HHincome$unemplyment_rate <- as.numeric(levels(empl_HHincome$unemplyment_rate))[empl_HHincome$unemplyment_rate]
+empl_HHincome$mean_HH_income <- as.numeric(levels(empl_HHincome$mean_HH_income))[empl_HHincome$mean_HH_income]
+
+```
+
+
+
+Educational Attainment, 2013-2018
+
+```{r setup, include=FALSE}
+educ <- read.csv("Education_Language_ACS_2018.csv", header=TRUE)
+View(educ)
+
+### Data Inspection
+# # Look for variables
+# M_edu <- as.matrix(educ)
+# Row1_edu <- M_edu[1,]
+# str(Row1_edu)
+# 
+# ### Find Columns that we need ###
+# 
+# Row1_edu[grep("EDUCATIONAL ATTAINMENT", Row1_edu)]
+# # Row1_edu[grep("Less than 9th grade", Row1_edu)]
+# # # DP02_0059E 
+# # # DP02_0059PE 
+# # 
+# # Row1_edu[grep("9th to 12th grade", Row1_edu)]
+# # # DP02_0060E 
+# # # DP02_0060PE 
+# # 
+# # Row1_edu[grep("High school graduate", Row1_edu)]
+# # # DP02_0061E  
+# # # DP02_0061PE 
+# # 
+# # Row1_edu[grep("Some college, no degree", Row1_edu)]
+# # # DP02_0062E
+# # # DP02_0062PE
+# # 
+# # Row1_edu[grep("Associate's degree", Row1_edu)]
+# # # DP02_0063E
+# # # DP02_0063PE 
+# # 
+# # Row1_edu[grep("Bachelor's degree", Row1_edu)]
+# # # DP02_0064E
+# # # DP02_0064PE 
+# # 
+# # Row1_edu[grep("Graduate or professional degree", Row1_edu)]
+# # # DP02_0065E
+# # # DP02_0065PE 
+# 
+# 
+# grep("Less than 9th grade", Row1_edu)
+# grep("Graduate or professional", Row1_edu)
+# # 235 - 262
+
+educ <- educ %>%
+  select(NAME, c(235:262)) 
+
+
+educ <- educ %>%
+  select(NAME, ends_with("E"), ends_with("PE"))
+
+View(educ)
+str(educ)
+
+# Change variables from factor to numeric
+
+my_function <-function(x) {
+  as.numeric(levels(x))[x]}
+
+educ <- educ %>%
+  mutate(NAME = as.character(NAME)) %>%
+  mutate_if(is.factor, my_function )
+str(educ)
+View(educ)
+
+
+educ <- educ %>%
+  mutate( tot_less_than_high_school = rowSums(educ[, c("DP02_0059E", "DP02_0060E")], na.rm = TRUE)) %>% # taking together people with <9th grade and 9th to 12th grade
+  mutate( pct_less_than_high_school = rowSums(educ[, c("DP02_0059PE", "DP02_0060PE")], na.rm = TRUE)) %>%
+  mutate( tot_college_associate = rowSums(educ[, c("DP02_0062E", "DP02_0063E")], na.rm = TRUE)) %>% # group college and associate degree together
+  mutate( pct_college_associate = rowSums(educ[, c("DP02_0062PE", "DP02_0063PE")], na.rm = TRUE)) %>%
+  rename(state = NAME, tot_high_school_grad = "DP02_0061E", pct_high_school_grad = "DP02_0061PE",
+         tot_bachelor = "DP02_0064E", pct_bachelor = "DP02_0064PE",
+         tot_grad_prof_degree ="DP02_0065E", pct_grad_prof_degree = "DP02_0065PE") %>%
+    slice(-c(1))
+
+# delete variables we don't need 
+educ <- educ[,-c(2:5, 8:11)]
+
+# rearrange data.frame
+educ <- educ[,c(1,8,2,10,4,6,9,3,11,5,7)]
+View(educ)
+```
+
+
+Age & Race, 2013-2018
+
+```{r setup, include=FALSE}
+
+factor_age_race <- read.csv("Age_Race_ACS5_2018.csv", header=TRUE)
+View(factor_age_race)
+str(factor_age_race)
+
+# Change variables from factor to numeric
+
+my_function <-function(x) {
+  as.numeric(levels(x))[x]}
+
+age_race <- factor_age_race %>%
+  mutate(NAME = as.character(NAME), GEO_ID=as.character(GEO_ID)) %>%
+  mutate_if(is.factor, my_function )
+str(age_race)
+View(age_race)
+
+
+## Data Inspection
+# # use a vector of first row to use grep
+# 
+# M <- as.matrix(factor_age_race)
+# Row1 <- M[1,]
+# str(Row1)
+# 
+# 
+# ### Age Range Find Columns that we need ###
+# 
+# Row1[grep("Under 5 years", Row1)]
+# Row1[grep("5 to 9 years", Row1)]
+# Row1[grep("10 to 14 years", Row1)]
+# # ...
+# # ...
+# Row1[grep("60 to 64 years", Row1)]
+# 
+# grep("Under 5 years", Row1)
+# grep("60 to 64 years", Row1)
+# # 252-291
+# Row1[grep("65 years and over", Row1)]
+# # DP05_0024E total number 
+# # DP05_0024PE percent 
+# 
+# ## Create Age Range Variables ## 
+# 
+# # 
+# # # use subsection of factor data.frame to get a better overview of the age data
+# # age_range <- factor_age_race %>%
+# # select(c(252:291))
+# # 
+# # View(age_range)
+# # 
+# # # delete margin errors - delete every second row
+# # age_range <- age_range[-c(seq(2,40,2))]
+# # 
+# # View(age_range)
+
+
+# Create columns "under 25", "25 to 44", "45 to 65"
+
+age_race<- age_race %>%
+  mutate( total_under_25 = rowSums(age_race[, c("DP05_0005E", "DP05_0006E", "DP05_0007E", "DP05_0008E", "DP05_0009E")], na.rm = TRUE)) %>%
+  mutate( pct_under_25=  rowSums(age_race[, c("DP05_0005PE", "DP05_0006PE", "DP05_0007PE", "DP05_0008PE", "DP05_0009PE")], na.rm = TRUE)) %>%
+  mutate( total_25_44 = rowSums(age_race[, c("DP05_0010E", "DP05_0011E")], na.rm = TRUE)) %>%
+  mutate( pct_25_44 =  rowSums(age_race[, c("DP05_0010PE", "DP05_0011PE")], na.rm = TRUE)) %>%
+  mutate( total_45_64 = rowSums(age_race[, c("DP05_0012E", "DP05_0013E", "DP05_0014E")], na.rm = TRUE)) %>%
+  mutate( pct_45_64 =  rowSums(age_race[, c("DP05_0012PE", "DP05_0013PE", "DP05_0014PE")], na.rm = TRUE))
+
+
+View(age_race)
+
+## Dta Inspection
+# ### RACE Find Columns ### 
+# 
+# Row1[grep("Total population", Row1)]
+# #DP05_0033E
+#   
+# Row1[grep("Hispanic or Latino", Row1)]
+# # DP05_0071E Total Number of Hispanic or Latino of any race
+# # DP05_0071PE Percent Hispanic or Latino of any race
+# 
+# 
+# Row1[grep("Chinese", Row1)]
+# # DP05_0046E Total Number of Chinese (one race) 
+# # DP05_0046PE Percent of Chinese (one race) 
+# 
+# 
+# Row1[grep("Asian", Row1)]
+# # DP05_0067E Total Number of Asians (one or more races) 
+# # DP05_0067PE Percent of Asians (one or more races) 
+
+
+age_race <- age_race %>%
+  select(NAME, DP05_0033E, DP05_0071E, DP05_0071PE, DP05_0046E, DP05_0046PE, DP05_0067E, DP05_0067PE, total_under_25, pct_under_25, total_25_44,  pct_25_44, total_45_64, pct_45_64, DP05_0024E, DP05_0024PE) %>%
+  rename(state=NAME, total_pop = DP05_0033E, total_hispanic = DP05_0071E, percent_hispanic=DP05_0071PE, total_chinese = DP05_0046E, percent_chinese=DP05_0046PE, total_asian = DP05_0067E, percent_asian = DP05_0067PE, total_65andover = DP05_0024E, pct_65andover = DP05_0024PE)%>%
+  slice(-c(1))
+
+View(age_race)
+
+# reorder data.frame
+age_race <- age_race[,c(1:9,11,13,15,10,12,14,16)]
+View(age_race)
+
+
+
+# 
+# 
+# ## not sure if we want that right now, ?? WOULD IT AFFECT OTHER VARIABLES?  
+# ## maybe we would need this for the graphics later to be able to use aesthetics like colour ect, but not really neccessary since it's only a minor variable and we will probably use it for plotting   
+# #combine age in one column - gather() - longformat
+# 
+# age_cat_data <- age_race %>%
+#   gather(key="age_cat_pct", value="age_pct", 13:16 ) %>%
+#   gather(key="age_cat_nr", value="age_nr", 9:12)
+# 
+# 
+# View(age_cat_data)
+
+
+
+
+```
+
+
+Combine datasets into one sociodemographic dataset
+
+```{r setup, include=FALSE}
+help(full_join)
+# age_race, educ, empl_HHincome, poverty
+
+sociodemographics <- full_join(age_race, educ, by = "state")
+sociodemographics <- full_join(sociodemographics, empl_HHincome, by = "state")
+sociodemographics <- full_join(sociodemographics, poverty, by = "state")
+
+View(sociodemographics)
+```
+
+
+
+Voting result of elections 2016
+
+
+```{r}
+library(xml2)
+library(rvest)
+```
+
+
+```{r}
+# read page as an R object
+
+src <- read_html("https://en.wikipedia.org/wiki/2016_United_States_presidential_election#Statistical_analysis")
+
+```
+
+Now extract the tables from this object (using the `rvest` package) and save the result as a new object. Follow the instructions if there is an error.
+
+```{r}
+# store all tables in object "all_tables"
+tables <- html_nodes(src, xpath = '//table')
+tables
+
+# convert html tables in data.frames
+
+vote <- html_table(tables[41], fill = TRUE)
+summary(vote)
+str(vote)
+
+# grep("Donald TrumpRepublican", vote)
+# [[1]]
+vote <- vote[[1]]
+
+View(vote)
+
+# deleting columns I don't need
+vote <- vote[-c(1,58:59),c(1, 8)]
+
+# naming variables
+names(vote) <- c("state", "election16_republicans")
+
+# recoding election win (2016) into a dummy variable 
+# 1 = republicans won
+# 0 = democrats won
+
+vote <- vote %>%
+  mutate(election16_republicans = case_when(election16_republicans >= 1 ~ 1,
+                                            election16_republicans == '–' ~ 0))
+  
+# All districts in Nebraska voted for Trump --> use as one variable
+vote <- vote[-c(31:33),]
+
+# In Maine the results were different in seperate districts --> assign missing value
+
+vote$election16_republicans[20] <- NA
+vote <- vote[-c(21,22),]
+
+## delete "(at-lg)"
+
+# make a matrix
+vote <- vote %>% 
+  as.matrix()
+
+# delete "(at-lg)" to join data.frame with sociodemograpics data.frame
+
+vote <- gsub("..(at-lg).", "", vote )
+
+vote <- as.data.frame(vote)
+
+class(vote)
+str(vote)
+
+View(vote)
+```
+
+
+Join dataset sociodemograpic and vote together 
+```{r}
+
+sociodemographics <- full_join(sociodemographics, vote, by = "state")
+
+View(sociodemographics)
+str(sociodemographics)
+
+```

@@ -113,8 +113,58 @@ hate_crime %>%
   geom_bar(stat = "identity", position = position_dodge(width = 0.2), alpha = 0.6) + 
   facet_grid(. ~ DATA_YEAR)
 
+
+
+## Ani 
+freq_trump <- freq_neg_tweet
+freq_trump$state <- "CA"
+for (state in unique(usa_tweets_hispanic$state)){
+  if (state != "CA"){
+    tmp <- freq_neg_tweet
+    tmp$state <- state
+    freq_trump <- rbind(freq_trump, tmp)
+  }
+}
+
+
+
+freq_trump %>%
+  left_join(usa_tweets_hispanic %>%
+              mutate(week = cut.Date(date, breaks = "1 week", labels = FALSE)) %>%
+              arrange(date, week) %>%
+              group_by(week, state) %>%
+              summarise(sentiment = mean(SentimentGI))) %>%
+  group_by(week) %>%
+  summarise(NegTrumpTweets_pct_share = sum(freq)/n(),
+            mean_sentiment = mean(sentiment, na.rm = TRUE)) %>%
+  gather(key = "variable", value = "value", -week) %>%
+  ggplot(aes(x = week, y = value)) +
+  geom_line(aes(color = variable), size=1) 
+
+freq_trump %>%
+  left_join(usa_tweets_hispanic %>%
+              mutate(week = cut.Date(date, breaks = "1 week", labels = FALSE)) %>%
+              arrange(date, week) %>%
+              group_by(week, state) %>%
+              summarise(negative_tweets = sum(SentimentGI < 0))) %>%
+  group_by(week) %>%
+  summarise(NegTrumpTweets_pct_share = sum(freq)/n(),
+            total_neg_tweets = sum(negative_tweets, na.rm = TRUE)) %>%
+  mutate(total_neg_tweets = (total_neg_tweets - min(total_neg_tweets))/ (max(total_neg_tweets) - min(total_neg_tweets)))%>%
+  gather(key = "variable", value = "value", -week) %>%
+  ggplot(aes(x = week, y = value)) +
+  geom_line(aes(color = variable), size=1) 
+
+
+
+
+
+
+
+
 library(lmtest)
 library(multiwayvcov)
+library(plm)
 
 data_fe
 

@@ -13,7 +13,7 @@ source("./scripts/aggregating/02-related-tweet-aggregate.R")
 ## output: hate-speed.RData
 
 source("scripts/data-collection/01 - FBI-data-collection-FBI-master-data.R")
-load("US Census raw data & File/sociodemographics_data.Rdata")
+load("processed-data/sociodemographics_data.Rdata")
 
 library(xml2)
 library(rvest)
