@@ -14,6 +14,14 @@ pkgs <-
     "igraph",
     "ggraph",
     "foreign",
+    "ggrepel",
+    "plm",
+    "lmtest",
+    "multiwayvcov",
+    "stargazer",
+    "knitr",
+    "kableExtra",
+    "pander",
     ### read data stored in various formats
     "readstata13",
     ### read data stored by Stata 13-16

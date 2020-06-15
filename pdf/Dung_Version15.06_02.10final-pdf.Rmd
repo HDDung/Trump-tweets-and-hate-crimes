@@ -8,9 +8,10 @@ bibliography: bibliography.bib
 
 
 ```{r setup, include=FALSE}
-
-# source("scripts/01 - data-collection.R")
-# source("scripts/02 - aggregate.R")
+knitr::opts_chunk$set(echo = FALSE)
+# source("/scripts/00 - setup.R")
+# source("/scripts/01 - data-collection.R")
+# source("/scripts/02 - aggregate.R")
 library(readr)
 library(tidyverse)
 library(dplyr)
@@ -19,10 +20,13 @@ library(ggrepel)
 library(plm)
 library(lmtest)
 library(multiwayvcov)
-
+library(stargazer)
+library(knitr)
+library(kableExtra)
+library(pander)
 ```
 
-```{r load all data}
+```{r load all data, echo=FALSE, message=FALSE, warning=FALSE}
 hate_crime <- read_csv("../raw-data/hate_crime.csv") 
 twitter_usage <- read_csv("../raw-data/twitter_usage_yearly.csv")
 
@@ -34,6 +38,13 @@ data_usertweet_trumptweet_hispanic <-
 data_usertweet_trumptweet_chinese <-
   read_csv("../processed-data/data_usertweet_trumptweet_chinese.csv")
 
+data_hatecrime_trumptweet_hispanic$mean_usage14_15 <-
+  data_hatecrime_trumptweet_hispanic$mean_usage14_15 / 10000
+
+data_usertweet_trumptweet_hispanic$mean_usage14_15 <-
+  data_usertweet_trumptweet_hispanic$mean_usage14_15 / 10000
+
+
 ```
 
 # Introduction
@@ -44,7 +55,7 @@ With the beginning of his presidential campaign in 2015, Trump started to regula
 
 This lack of regulation and Trump’s elite status raised the question of a potential link between Trumps Twitter use and hate speech and hate crime, respectively. Yearly hate crime statistics provided by the FBI suggest that overall hate crimes in the U.S. have increased since the year of 2014 (Figure 1). The successive increase in hate crime is also observed when looking at anti-racial hate crimes seperately (Figure 2). This developments coincide with the start of Trump's political carrier as he anounced his run for president on June 16, 2015. 
 
-### Figure 1
+### Figure 1: Hate Crimes per Year
 
 ```{r Hate crimes per Year, warning=FALSE, echo=FALSE}
 hate_crime %>%
@@ -53,18 +64,16 @@ hate_crime %>%
   summarise(incident_num = n()) %>%
   ggplot(aes(x = DATA_YEAR, y = incident_num))+
   geom_line(size=1.5, col="grey31") +
-  ggtitle(" Hate Crimes per Year") +
   scale_x_continuous("Years", breaks = seq(2007, 2018, 1))+
   scale_y_continuous("Yearly number of Hate Crimes") +
-  theme( plot.title = element_text(size= 15, vjust=2, hjust=0.5),
-         axis.title.x = element_text(vjust=-1),
+  theme( axis.title.x = element_text(vjust=-1),
          axis.line = element_line(color = "grey31"),
          panel.background = element_blank()) +
   geom_vline(xintercept  = 2014, linetype="dotted", 
              color = "blue", size=2)
 ```
 
-### Figure 2
+### Figure 2: Yearly Hate Crimes per Ethnic Group
 
 ```{r Hate crimes per Year for each ethinic, warning=FALSE, echo=FALSE}
 hate_crime %>% 
@@ -80,12 +89,10 @@ hate_crime %>%
   geom_line(aes(col = BIAS_DESC), size=1) +
   geom_vline(xintercept  = 2014, linetype="dotted", 
              color = "grey35", size=1.5) + 
-  ggtitle("Yearly Hate Crimes per Ethnic Group") +
   labs(col = "Racial Bias") +
   scale_x_continuous("Years", breaks = seq(2007, 2018, 1))+
   scale_y_continuous("Yearly number of Hate Crimes") +
-  theme( plot.title = element_text(size= 10, vjust=2, hjust=0.5),
-         axis.title.x = element_text(vjust=-1),
+  theme( axis.title.x = element_text(vjust=-1),
          axis.line = element_line(color = "grey31"),
          panel.background = element_blank())
 ```
@@ -131,130 +138,174 @@ The first hypothesis looks at how prominent Trump tweets are in guiding public d
 
 # Data
 
-We restricted the data collection for the dependent and explanatory variables on two particular timeframes. For Trump tweets, hate speech and hate crime towards Mexicans we set the timeframe to the 20th of January 2017 till the 20th of April 2017. For Chinese our timeframe was the 16th of March 2020 till the 10th of June 2020. The decision for those timeframes will be discussed below.
-To achieve a higher comparability between the trends towards Mexicans and Chinese we only looked at data since Trump officially became president. His social influence before and after his electoral victory might have been different. When being in office Trump was not only a very well-known public figure, he was also holding judicial power which gave him additional legal legitimacy. We therefore set the starting date for our data collection of Mexican tweets and hate crime to the day of his inauguration, the 20th of January 2017, even though he started commenting negatively a couple of months before. Roughly around the start of his presidential campaign. 
-For the tweets against Chinese we set the starting date of data collection to the first day Trump mentioned the term “Chinese Virus” on Twitter. Since the Covid-19 pandemic is a relatively new topic we were only able to collect data until the 10th of June 2020. To have a similar timespan for both minority groups we also restricted the data collection for Mexicans to a time span of three months. Because the timespan is relatively short, we focus on weekly changes in our analysis.
+We restricted the data collection for the dependent and explanatory variables on two particular timeframes. For Trump tweets, hate speech and hate crime towards Mexicans we set the timeframe to the 20th of January 2017 till the 20th of April 2017. For Chinese, our timeframe was the 16th of March 2020 till the 12th of June 2020. The decision for those timeframes will be discussed below.
+To achieve a higher comparability between the trends towards Mexicans and Chinese we only looked at data since Trump officially became a president. His social influence before and after his electoral victory might have been different. When being in office Trump was not only a very well-known public figure, he was also holding judicial power which gave him additional legal legitimacy. We therefore set the starting date for our data collection of Mexican tweets and hate crime to the day of his inauguration, the 20th of January 2017, even though he started commenting negatively a couple of months before. Roughly around the start of his presidential campaign. 
+For the tweets against Chinese we set the starting date of data collection to the first day Trump mentioned the term “Chinese Virus” on Twitter. Since the Covid-19 pandemic is a relatively new topic we were only able to collect data until the 12th of June 2020. To have a similar timespan for both minority groups we also restricted the data collection for Mexicans to a time span of three months. Because the timespan is relatively short, we focus on weekly changes in our analysis.
 
 For an overview over all collected variables and sources please have a look at Table A1 in the Appendix. 
 
 ## Explanatory variable – Frequency of negative Trump tweets
 
-For collecting Trump tweets we rely on the Trump Twitter Archive which was made available by Brendan Brown. The Archive covers almost every tweet ever made by Trump and is updated in real time. The website provides an advantage over extracting Trump’s tweets directly from Twitter as it archives the tweets that Trump deletes on his Twitter account as well. 
+We rely on the Trump Twitter Archive which was made available by Brendan Brown to collect Trump's tweets. The Archive covers almost every tweets ever made by Trump and is updated in real time. The website provides an advantage over extracting Trump’s tweets directly from Twitter as it archives the tweets that Trump deletes on his Twitter account as well. 
 
 
-For our analysis we are interested in the frequency of negative tweets. To be able to calculate how frequently Trump was using hate speech towards a specific group we collected the number of negative Trump tweets and the overall number of Trump tweets per week and divided them.
-
-E.g:
+For our analysis we are interested in the frequency of Trump's negative tweets. To be able to calculate how frequently Trump was using hate speech towards a specific group we collected the number of negative Trump tweets and the overall number of Trump tweets per week and divided them.
  
-For the count of negative tweets we used a set of keywords which are likely to be related to the respective minority group. For details please see Table A2 in the Appendix. We looked at every tweet containing one of these keywords separately and made sure that they were addressing Mexicans / Chinese. The categorization into positive and negative tweets was also done by hand.  The overall weekly number of Trump tweets was taken from the Twitter archive by selecting the respective week. 
+For the count of negative tweets we used a set of keywords which are likely to be related to the respective minority group. For details please see Table A2 in the Appendix. We looked at every tweet containing one of these keywords separately and made sure that they were addressing Mexicans / Chinese. 
+
+The categorization of Trump's tweets into positive and negative tweets was done using the 'Dictionary-Based Sentiment Analysis', which is accessible through the package 'SentimentAnalysis' in R. The sentiment of each tweet is calculated by sum of positive and negative words divided by the total number of words in a tweet. The result is a sentiment score which can range between + 1 and -1, where the score larger than 0 signifies positive and the score lower than 0 indicates negative sentiment. The weekly total number of Trump's tweets was calculated by aggregating his daily tweets into weeks. 
 
 ## Dependent variables
 
+### Hate speech:
+For our hate speech variables we collected data from Twitter. To collect tweets from the general users we utilize python codes ‘GetOldTweets-python’ from Jefferson Henrique which has been created in 2016. The codes allow us to collect tweets that are older than seven days from the day we collect the data, which is a constraint we face if we use Twitter’s official API. The python codes can be found below.  
 
-```{r Python codes to collect old tweets}
+To overcome the negative side of the official API, the python codes took advantage of Twitter Search on browsers. Whenever a client or user used the search bar of Twitter, the scroll loader started, and then if he or she scrolled down further, the scroll loader would start to obtain more tweets by sending requests to the server and receiving JSON responses.  The problem was that we do not know what the true mechanism of the searching bar was, how it returned results to clients or whether we had differences between different users in different locations when they were making the searches. So we assumed that the result returned by the search bar was the whole population of the query - the search term. 
 
-```
+Tweets for each USA state were collected within the area of a circle in which the center was formed by the longitude and latitude of the state and the radius was the square root of the total area of that state. The information about longitude, attitude and the total area was collected via the internet. The upper limit number of tweets for each state was 1000 tweets.
 
+To make sure that the tweets were referring back to Trump statements, concerning the same topic we used the same keywords as we did for collecting Trump tweets.
+
+For Hispanic tweets we collected, in total, 26155 tweets in 49 out of 50 states. More than 16% of tweets were from the State of California and there were no tweets collected in Alaska. 
+
+For Chinese related tweets, we were only able to collect 1000 tweets in total, which are only from one State - Wisconsin. That was a huge disadvantage for our further analysis. The reason for this could be that Twitter users were not willing to publish their location anymore.
+
+The first variable we generated was the total number of tweets including at least one of the keywords. The collected tweets could either be positive or negative. This variable was supposed to represent how influential Trump is in defining relevant subjects of discussion and therefore guiding the overall opinion formation. The more people talked about a topic the more controversial it seems to be.
+
+For our second variable we computed the average sentiments over all the collected tweets using the same keywords as Trump. For doing that we used a dictionary-based sentiment analysis. The sentiments were calculated by using the Harvard-IV dictionary as used in the General Inquirer software. Each word in the dictionary contains a value which can be positive or negative depending on its meaning. 
+
+
+### Hate Crime:
+
+The data on hate crime was provided to us by the FBI. The dataset included all hate crimes that were reported as part of the Uniform Crime Reporting (UCR) program during the period of 1991 to 2018. The data set described the daily hate crime incidents within each state, including the type of the racial bias. Identical to the Trump tweets and hate speech we also focused on the number of weekly incidents within each state.
+
+
+We would like to add that the number of reported incidents is likely to be lower than the actual number of hate crimes. In order to be included in the hate crime statistic, crimes had to undergo a two-stage decision process and had to meet a list of objective criteria, characterizing them as hate crime. In addition to this detailed process, incidents that would categorize as hate crime, might not have been reported to the police at all.
+
+Another point we would like to mention is that the yearly number of incidents in each state and the yearly number of incidents in the whole U.S. were a little bit higher than the published reports on the official website of the FBI. We do not know how they aggregated the data for the public reports. So there was inconsistency between our data and FBI’s public reports. 
 
 ## Control variables
 
+### Twitter Use:
+ 
+For measuring the Twitter use within each state we rely on data from GESIS datorium. Upon request we were able to access geotagged Twitter posts from the U.S., collected in a 6 months period, both in 2014 and 2015. The files contained the aggregated number of hashtags used per day and state. One difficulty we were facing was the large volume of the data. The data was structured in zip-files per month containing several zip-files per day (Gesis datorium). To be able to calculate the total number of hashtags per State we had to join the txt-files first. Luckily R can handle big data well. Therefore we only had to load each txt-file independently and process it directly before moving to another txt-files. Doing so prevented problems with an overflowing memory in R.   
+  
+### Election Results 2016
 
-# Results
+As a first control variable we collected data on the election outcome for the 2016 election within each state. We extracted the data from a Wikipedia table. We used the count of electoral votes to identify if the majority of the population voted for Trump or for Hillary Clinton. We recorded the values to a dummy variable with 1 reporting a higher voting share for the republicans and 0 reporting a majority for the democratic party.
 
-## Regression 
+### Demographics:
 
-```{r Hispanic: Incident_num ~ freq_trump}
-fit_crime_immi <-
-  plm(
-    incident_number ~ freq_trump,
-    data = data_hatecrime_trumptweet_hispanic,
-    index = c("state", "week"),
-    model = "within",
-    effect = "individual"
-  )
+For descriptive and controlling purposes we included a list of demographic variables, which were all collected from the US Census Bureau website (see Figure A1).  The data was taken from four different online tables and had to be cleaned afterwards. We chose to use 5-year estimates instead of yearly data to have a more stable representation. We assumed that 5-year estimates are less vulnerable to yearly fluctuation and more likely to represent the general demographic structure in each state. Until now the latest year of reporting is 2018, our data therefore covers the years from 2013 until 2018.
+
+Some of our other variables were taken from the year 2020, which was not represented in the statistics. We argue that by using averaged 5-year data the demographic structure is likely to remain constant and can be seen as a good estimate for 2020 as well.
 
 
-coeftest(fit_crime_immi, vcov=vcovHC(fit_crime_immi, type="sss", cluster="group")) 
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+makeTable <- function(row.name, dependVar.name, fit_mitIter) {
+  
+  coeftest_mitIter <-
+    coeftest(fit_mitIter,
+             vcov = vcovHC(fit_mitIter, type = "sss", cluster = "group"))
+  
+  out <- unname(coeftest_mitIter[, c(1, 4)])
+  out <- data.frame(out)
+  colnames(out) <- c("Estimate", "P-value")
+  rownames(out) <- row.name
+  
+  out[, 2] <-
+    paste(round(out[, 2], 4), 
+          add.significance.stars(out[, 2], cutoffs = c(0.05, 0.01, 0.001)))
+  
+  headertext <- c(1, 2)
+  names(headertext) <- c(" ", dependVar.name)
+  options(knitr.kable.NA = ' - ')
+  kable(out,
+        "latex",
+        digits = 4,
+        booktabs = T,
+        align = "c") %>%
+    kable_styling(bootstrap_options = c("striped", "hover")) %>%
+    add_header_above(headertext)
+}
+
+simulation <-
+  function(freq_trump,
+           tweet_usage,
+           coef_freq,
+           coef_iterTerm,
+           name.scenario) {
+    num.sims = length(freq_trump)
+    value <- freq_trump * tweet_usage * coef_iterTerm + freq_trump * coef_freq
+    ev <- array(data=NA, dim=c(num.sims, 2))
+    ev <- as.data.frame(ev)
+    names(ev) <- c("value", "freq_trump")
+    ev$value <- value
+    ev$freq_trump <- freq_trump
+    ev$name.scenario <- name.scenario
+    return(ev)
+  }
+
+plotScenario <- function(model, title_of_y = "") {
+  scenario <- seq(from = 0,
+                  to = 1,
+                  length.out = 100)
+  plot.data.evs <-
+    rbind(
+      simulation(
+        freq_trump = scenario,
+        tweet_usage = 500,
+        coef_freq = model$coefficients[["freq_trump"]],
+        coef_iterTerm = model$coefficients[["freq_trump:mean_usage14_15"]],
+        name.scenario = "High tweet usage"
+      ),
+      simulation(
+        freq_trump = scenario,
+        tweet_usage = 100,
+        coef_freq = model$coefficients[["freq_trump"]],
+        coef_iterTerm = model$coefficients[["freq_trump:mean_usage14_15"]],
+        name.scenario = "Low tweet usage"
+      )
+    )
+  label.size <- 12
+  ggplot(plot.data.evs,
+         aes(
+           x = freq_trump,
+           y = value,
+           col = factor(name.scenario)
+         )) +
+    geom_line(linetype = 2) +
+    labs(x = "Frequence of negative tweet from Trump", y = title_of_y) + 
+    theme(
+      panel.background = element_blank(),
+      panel.border = element_rect(colour = "black", fill =
+                                    NA),
+      axis.text = element_text(color = "black"),
+      legend.title = element_blank()
+    )
+  
+}
 ```
 
-```{r Hispanic: perc_negative ~ freq_trump}
-fit_v1 <-
-  plm(
-    perc_negative_usa ~ freq_trump,
-    data = data_usertweet_trumptweet_hispanic,
-    index = c("state", "week"),
-    model = "within",
-    effect = "individual"
-  )
 
 
-coeftest(fit_v1, vcov=vcovHC(fit_v1, type="sss", cluster="group")) 
-```
-```{r Hispanic: total_negative ~ freq_trump}
-fit_v2 <-
-  plm(
-    total_negative_usa ~ freq_trump + total_tweet_usa, ## Do we have simultaneity here if we include total_tweet_usa?
-    data = data_usertweet_trumptweet_hispanic,
-    index = c("state", "week"),
-    model = "within",
-    effect = "individual"
-  )
 
 
-coeftest(fit_v2, vcov=vcovHC(fit_v2, type="sss", cluster="group")) 
-```
-```{r Hispanic: total_negative ~ freq_trump*week}
-fit_v2 <-
-  plm(
-    total_negative_usa ~ freq_trump*week + total_tweet_usa, ## Do we have simultaneity here if we include total_tweet_usa?
-    data = data_usertweet_trumptweet_hispanic,
-    index = c("state", "week"),
-    model = "within",
-    effect = "individual"
-  )
 
 
-coeftest(fit_v2, vcov=vcovHC(fit_v2, type="sss", cluster="group")) 
-```
 
-```{r Hispanic: mean_sentiment ~ freq_trump}
-fit_v3 <-
-  plm(
-    mean_sentiment ~ freq_trump,
-    data = data_usertweet_trumptweet_hispanic,
-    index = c("state", "week"),
-    model = "within",
-    effect = "individual"
-  )
-
-
-coeftest(fit_v3, vcov=vcovHC(fit_v3, type="sss", cluster="group")) 
-
-```
-
-```{r Hispanic: mean_sentiment ~ freq_trump*week}
-fit_v3 <-
-  plm(
-    mean_sentiment ~ freq_trump*week,
-    data = data_usertweet_trumptweet_hispanic,
-    index = c("state", "week"),
-    model = "within",
-    effect = "individual"
-  )
-
-
-coeftest(fit_v3, vcov=vcovHC(fit_v3, type="sss", cluster="group")) 
-
-```
-
-## Graphical data exploration
+# Graphical data exploration
 
 ## Hate Crime 
 
+
 Figure 3 looks at the Twitter Usage and the number of Anti-Hispanic hate crime per State. In this plot we can see, that States with a large Twitter use also seem to have a higher number in hate crimes. This suggests that there is a correlation between Twitter in general and Anti-Hispanic hate crime. To assess if this correlation could be induced by Trump tweets in particular, we will have a closer look on Trumps Twitter activity and Hate Crime in the next graph. States which show a high Twitter Usage and a high crime rate, tend to be States with a  higher overall population and a higher population density, like California or New York. The graphical relation might therefore also just be a consequence of this higher population size.
 
-### Figure 3
-```{r, warning=FALSE, , echo=FALSE}
+### Figure 3: Twitter Use and Hate Crime (per State)
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 twitter_usage_state <- twitter_usage %>%
   group_by(state) %>%
   summarise(mean_usage14_15 = sum(total)/n()) # take the mean hashtag counts for years 2014 and 2015
@@ -272,10 +323,9 @@ hate_crime %>%
   #geom_point() +
   geom_text(aes(label= STATE_ABBR), size = 2.5, nudge_y = 10, check_overlap = T) +
   geom_smooth(method = "lm", se = FALSE, alpha=0.3, size=0.5, span=0.5) + ## Optional
-  labs(title="Twitter Use and Hate Crime (per State)", x="Twitter Usage (Rescaled to range 0 - 100)", y="Anti-Hispanic Hate Crimes") +
+  labs(x="Twitter Usage (Rescaled to range 0 - 100)", y="Anti-Hispanic Hate Crimes") +
   labs(col = "State")+
-  theme( plot.title = element_text( hjust=0.5),
-         axis.title.x = element_text(vjust=-1),
+  theme( axis.title.x = element_text(vjust=-1),
          axis.line = element_line(color = "grey31"),
          panel.background = element_blank()) +
   facet_grid(. ~ DATA_YEAR)
@@ -284,6 +334,7 @@ hate_crime %>%
 
 
 With the next graph (Figure 4) we get a first glimpse at how Trump's Twitter activity and the number of hate crimes changed over time.
+
 The y-axes describes two different variables with different scales. This might be a little problematic, but since it's just an explanatory graph only a minor issue. In the graph we can see that there is a coinciding tendency of the two trends, with hate crime incidents shifted a little to the right. This would mean that weeks, in which Trump used a lot of negative anti-Hispanic rhetoric in relation to his overall number of tweets, seem to be followed by weeks with more hate crimes. We can see that in the second week after his inauguration aroung 16 % out of all his tweets were directed against Hispanics. This peak in negative tweets was followed by a peak in anti-Hispanic hate crime one week. The subsequent drop in anti-Hispanic rhetoric in week 3 was again followed by a large decline in hate crimes in week 4. Trump's tweets therefore seem to preceed the hate crime trend by a week. Of course this is just a visual assessment. To get a better idea of the causal relationship we conducted a regression analysis in the next chapter. 
 
 ### Figure 4: Anti-Hispanic Trump tweets and anti-Hispanic hate crime (U.S.)
@@ -296,8 +347,7 @@ data_hatecrime_trumptweet_hispanic %>%
             HateCrimeTotal = sum(incident_number, na.rm = TRUE)) %>%
   gather(key = "variable", value = "value", -week) %>%
   ggplot(aes(x = week, y = value)) +
-  geom_line(aes(color = variable), size=1) + 
-  scale_color_manual(values = c("MediumOrchid4", "DeepSkyBlue2")) +
+  geom_line(aes(color = variable), size=1) +
   labs(col = "Legend") +
   scale_x_continuous("Weeks", breaks = seq(1, 13, 1))+
   scale_y_continuous("Percentage Share of negative tweets /\n Total number of Hate Crimes") +
@@ -313,6 +363,7 @@ data_hatecrime_trumptweet_hispanic %>%
 
 ## Hate Speech - Hispanic
 
+
 Figure 5 displays the relationship between Anti-Hispanic Trump tweets and the total number of Anti-Hispanic tweets from other 
 Twitter users. The timeline suggests similar trends in upwards and downwards shifts until week 7. Afterwards the visual relation is a bit more ambiguous.However we still conclude that there is at least a slight correlation. The number of Anti-Hispanic tweets is especially high in the beggining of the timeline, so right after the start of Trump's presidency. A possible explanation for this increase could be the simultaneous weekly increase in Anti-Hispanic Trump tweets. However the increase could have also be provoked by his official anouncement as president rather than through his Twitter activity. 
 
@@ -320,27 +371,33 @@ Twitter users. The timeline suggests similar trends in upwards and downwards shi
 ### Figure 5: Change in Total number of Anti-Hispanic tweets compared to frequency of Trump tweets
 
 
-```{r, warning=FALSE, echo=FALSE, messeage = FALSE}
+```{r echo=FALSE, warning=FALSE}
 
 data_usertweet_trumptweet_hispanic %>%
   group_by(week) %>%
-  summarise(NegTrumpTweets_pct_share = mean(freq_trump),
-            total_neg_tweets = sum(total_negative_usa, na.rm = TRUE)) %>%
-  mutate(total_neg_tweets = (total_neg_tweets - min(total_neg_tweets))/ (max(total_neg_tweets) - min(total_neg_tweets)))%>%
-  gather(key = "variable", value = "value", -week) %>%
-  ggplot(aes(x = week, y = value)) +
-  geom_line(aes(color = variable), size=1) + 
-  scale_color_manual(values = c("DeepSkyBlue2", "dark orange")) +
+  summarise(
+    NegTrumpTweets_pct_share = mean(freq_trump),
+    total_neg_tweets = sum(total_negative_usa, na.rm = TRUE)
+  ) %>%
+  mutate(total_neg_tweets = (total_neg_tweets - min(total_neg_tweets)) / (max(total_neg_tweets) - min(total_neg_tweets))) %>%
+  gather(key = "variable", value = "value",-week) %>%
+  ggplot(aes(x = week, y = value, color = variable)) +
+  geom_line(size = 1)  +
   labs(col = "Legend") +
-  scale_x_continuous("Weeks", breaks = seq(1, 13, 1))+
+  scale_x_continuous("Weeks", breaks = seq(1, 13, 1)) +
   scale_y_continuous("Total number of Anti-Hispanic tweets /\n Frequency of Anti-Hispanic Trump tweets") +
-  theme( axis.title.x = element_text(vjust=-1),
-         axis.line = element_line(color = "grey31"),
-         panel.background = element_blank()) +
+  theme(
+    axis.title.x = element_text(vjust = -1),
+    axis.line = element_line(color = "grey31"),
+    panel.background = element_blank()
+  ) +
   scale_colour_discrete(
-    name="Experimental\nCondition",
+    name = "Experimental\nCondition",
     breaks = c("NegTrumpTweets_pct_share", "total_neg_tweets"),
-    labels = c("Frequency of \n Anti-Hispanic Trump tweets", "Total number of Anti-Hispanic tweets")
+    labels = c(
+      "Frequency of \n Anti-Hispanic Trump tweets",
+      "Total number of Anti-Hispanic tweets"
+    )
   ) 
 
 
@@ -439,17 +496,122 @@ data_usertweet_trumptweet_chinese %>%
 
 ## Analysis
 
-# Discussion
+To test our hypotheses in a more causal approach we performed Fixed Effect models. Fixed Effect models address one of the main problems when using longitudinal data. They rule out time-constant unobserved heterogeneity problems and therefore, control for an omitted variable bias. Since our units of interest are states, our models control for all constant state-related characteristics that could have biased the results. Under the assumption that there are no time-varying events influencing the outcome variables, we are able to identify the causal effect of Trump’s tweets.
 
-Limitation
+$$
+Hate\ Crimes = \beta \  Trump\ Tweets \times Twitter\ Usage + \epsilon
+$$
+Since we hypothesized that Trump’s rhetoric spreads through Twitter, there should be a higher increase in hate crimes and hate speech in states with larger Twitter usage. We therefore included Twitter usage to create an interaction effect with the frequency of Trump’s negative tweets, which allowed us to model the effect heterogeneity and make statements about how Trump’s effect varies with Twitter use. This approach was chosen for all outcome variables (hate crime and hate speech). Unfortunately, we were unable to perform any models for anti-Chinese tweets due to the lack of data. In our regression analysis we thus only evaluated the influence of Trump’s anti-Hispanic rhetoric.
 
-1. For our data analysis we only used data since Trump officially was in office on 20th of January 2017. We decided on restricting the time frame because officially holding the position as president might have changed people’s perception of Trump and thereby his influence. His status might have changed from being a well-known public figure to being an important politician who holds judicial power. However, people were already exposed to anti-hispanic rhetoric during his presidential campaign. Our starting point of data collection for tweets about Hispanics therefore isn’t in line with the actual starting point of him using negative Hispanic rhetoric. For the negative rhetoric addressed towards Chinese and Corona on the other hand, we observe the initial reactions when phrases like “China Virus” and “Chinese Virus” have first been used. Therefore, the underlying processes might have been different at the different time points, since anti-mexican attitudes already had time to develop. The results for our two modes for Mexicans and Chinese are therefore probably not really comparable.
+### Hate Crime
 
-2. Another thing that might influence the comparability of the two minority groups is, that the population of Chinese were only in the center of attention for a couple of weeks due to other incidences like the murder of Georg Floyd and Trump’s conflict between Twitter and Trump. Long term permanent change towards negative attitude which would then transform into hate crime towards Chinese is therefore unlikely.
+For hate crimes, we assumed Trump’s influence to be higher in states with  greater Twitter use. Model 1 provided two coefficients. The first coefficient (freq_trump) described a situation where the Twitter usage was zero. Since there were no states in America that did not use Twitter, interpreting this coefficient did not provide any meaningful interpretation. 
+
+The interaction effect shown by the second coefficient was positive and proved to be significant on a 1% significance level. From this, we conclude that the influence of Trump’s tweets is higher in states with a large Twitter use, causing an increase in the number of hate crimes. This interpretation therefore supports our graphical assessment made earlier and supports hypotheses 3. 
+
+### Model 1
+
+```{r Hispanic: Trump and Hate crime, echo=FALSE, message=FALSE, warning=FALSE}
+fit_CrimeImmi_mitIter <-
+  plm(
+    incident_number ~ freq_trump * mean_usage14_15,
+    data = data_hatecrime_trumptweet_hispanic,
+    index = c("state", "week"),
+    model = "within",
+    effect = "individual"
+  )
+
+fit_CrimeImmi_ohneIter <-
+  plm(
+    incident_number ~ freq_trump,
+    data = data_hatecrime_trumptweet_hispanic,
+    index = c("state", "week"),
+    model = "within",
+    effect = "individual"
+  )
 
 
-3. One limitation of our study is the representativeness of the results. In total relatively few adult Americans are using Twitter, namely only 22 %. Out of them only one-in-five is following Trump’s twitter account  (@PewResearchCenter2019b). We argued that tweets sent by Trump have a larger reach and also influence non-followers. Due to homophily preferences in network formation there might still be a bias towards more republicans seeing his posts. Our results concerning H1 and H2 are therefore likely to be overestimated for American twitter users overall.
+makeTable(row.name = c("Freq. Trump NegTweet", "Freq. Trump NegTweet x Tweet Usage"),
+          dependVar.name = "Incident number for a week",
+          fit_mitIter = fit_CrimeImmi_mitIter)
 
+```
+
+### Interaction Plot
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+plotScenario(fit_CrimeImmi_mitIter, title_of_y = "Incident number for a week")
+
+```
+
+
+
+### Number of overall tweets
+
+In the second model we were interested in the effect of Trump’s tweets on the overall number of tweets related to Hispanics. As can be seen in model 2, there did not seem to be an influence. Both estimates were insignificant. This means that neither Trump’s tweets nor Twitter Usage were influencing the volume of Hispanic related tweets. When looking at the direction of the effects we see that it contradicts the direction of our suggested link in hypothesis 1. Our first hypothesis, suggested an increase in the volume of tweets concerning Hispanics, caused by Trump’s anti-Hispanic tweets. Due to our results, H1 has to be rejected. 
+
+### Model 2
+
+```{r Hispanic: Hispanic frequency and Trump, echo=FALSE, message=FALSE, warning=FALSE}
+fit_frequency_mitIter <-
+  plm(
+    total_tweet_usa ~ freq_trump * mean_usage14_15,
+    data = data_usertweet_trumptweet_hispanic,
+    index = c("state", "week"),
+    model = "within",
+    effect = "individual"
+  )
+
+
+makeTable(row.name = c("Freq. Trump NegTweet", "Freq. Trump NegTweet x Tweet Usage"),
+          dependVar.name = "Total users'tweet for a week",
+          fit_mitIter = fit_frequency_mitIter)
+
+```
+
+
+### Sentiments of user tweets
+
+Next we will test for the causal effect of the frequency of Trump's negative tweets on the sentiments of Twitter users. The findings revealed that there was no significant effect. As before, we further tested for the interaction effect between the frequency of Trump's negative tweets and the Twitter usage in each state. We expected that states with higher Twitter usage would be affected more strongly by the frequency of Trump's negative
+tweets. The results suggested that the direct and the interaction effects were both insignificant. In other words, the frequency of Trump’s negative tweets towards the Hispanic population did not influence the negative sentiment of the Twitter users towards the Hispanic population; even for the States with high Twitter usage. Hypotheses 2 therefore has to be rejected. 
+
+### Model 3
+
+```{r Hispanic: Hispanic sentiment and Trump, echo=FALSE, message=FALSE, warning=FALSE}
+fit_sentiment_mitIter <-
+  plm(
+    mean_sentiment ~ freq_trump * mean_usage14_15,
+    data = data_usertweet_trumptweet_hispanic,
+    index = c("state", "week"),
+    model = "within",
+    effect = "individual"
+  )
+
+
+makeTable(row.name = c("Freq. Trump NegTweet", "Freq. Trump NegTweet x Tweet Usage"),
+          dependVar.name = "Mean sentiment per week",
+          fit_mitIter = fit_sentiment_mitIter) 
+```
+
+
+
+# Conclusion
+
+Our study aimed to investigate the influence that Trump has on the public. More specifically, we planned to examine how Trump’s Twitter activity had an effect on hate speech on Twitter and the incidents of hate crimes. We chose to look at two time periods: at the start of his presidency where he made degrading tweets about the Hispanic immigrants and population, and the more recent period involving the discussion of Coronavirus where he displayed negative viewpoints on Chinese people. We hypothesized that an increasing frequency of Trump’s negative tweets towards the Hispanic and Chinese people would lead to: (1) Increased numbers of tweets about Hispanic and Chinese people; (2) increasingly negative attitudes towards Hispanic and Chinese people; and (3) higher incidents of hate crimes against the Hispanic population. The findings in our analyses suggested that the frequency of Trump’s negative tweets led to increases in numbers of hate crime incidents against the Hispanic population in the states with higher Twitter usage. Nevertheless, the frequency of Trump’s negative tweets did not affect the number of tweets by Twitter users that mentioned the keywords in Trump’s tweets. Moreover, how often Trump displayed his negative sentiment towards the Hispanic and Chinese people did not influence the negative sentiment of the Twitter users towards the two groups as well. In conclusion, while Trump’s Twitter usage had led to more hate crimes against the targeted minorities, the president did not really influence the sentiment of Twitter users on the Hispanic and Chinese people. 
+
+
+## Limitation
+
+1. For our data analysis we only used data since Trump officially was in office on 20th of January 2017. We decided on restricting the time frame because officially holding the position as president might have changed people’s perception of Trump and thereby his influence. His status might have changed from being a well-known public figure to being an important politician who holds judicial power. However, people were already exposed to anti-Hispanic rhetoric during his presidential campaign. Our starting point of data collection for tweets about Hispanics therefore isn’t in line with the actual starting point of him using negative Hispanic rhetoric. For the negative rhetoric addressed towards Chinese and Corona on the other hand, we observe the initial reactions when phrases like “China Virus” and “Chinese Virus” have first been used. Therefore, the underlying processes might have been different at the different time points, since anti-Hispanic attitudes already had time to develop.
+
+2. Another thing that might influence the comparability of the two minority groups is, that the population of Chinese were only in the center of attention for a couple of weeks due to other incidences like the murder of Georg Floyd and Trump’s conflict between Twitter and Trump. Long term permanent change towards more negative attitude which would then transform into hate crime towards Chinese is therefore unlikely.
+
+
+
+3. One limitation of our study is the representativeness of the results. In total relatively few adult Americans are using Twitter, namely only 22 %. Out of them only one-in-five is following Trump’s twitter account  (Pew Research Center 2019b). We argued that tweets sent by Trump have a larger reach and also influence non-followers. Due to homophily preferences in network formation there might still be a bias towards more republicans seeing his posts. Our results concerning H1 and H2 are therefore likely to be overestimated for American twitter users overall.
+
+
+4. Another point to consider is the fact that official statistics cannot account for every single crime incident. This disadvantage is even more pronounced for hate crimes where official reports hardly reflect their real prevalence. The number of reported hate crimes can be highly inaccurate due the challenges in identifying criminal incidents that are premeditated by the intention to inflict hate on the groups in which the victims belong to.
 
 # Appendix
 
