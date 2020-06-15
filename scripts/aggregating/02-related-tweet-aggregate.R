@@ -26,6 +26,7 @@ preprocessTweet <- function(tweets){
   tweets <- cbind.data.frame(tweets, text_df)
   return(tweets)
 }
+
 sentimentAnalyt <- function(processed_tweet){
   state_tweet_sentiment <- analyzeSentiment(processed_tweet$text_clean) 
   
