@@ -19,7 +19,7 @@ keywords_chinese <- c("China virus",
 
 
 Trump_tweet_hispanic <- read_delim(
-  "raw-data/Trump_tweet_hispanic.csv",
+  "../raw-data/Trump_tweet_hispanic.csv",
   "|",
   escape_double = FALSE,
   trim_ws = TRUE
@@ -38,11 +38,11 @@ freq_neg_tweet_hispanic <- Trump_tweet_hispanic %>%
             total_negative_trump = sum(negative > 0),
             total_tweet_trump = n())
 
-write.csv(freq_neg_tweet_hispanic, file = 'processed-data/freq_neg_trump_hispanic.csv')
+write.csv(freq_neg_tweet_hispanic, file = '../processed-data/freq_neg_trump_hispanic.csv')
 
 
 Trump_tweet_chinese <- read_delim(
-  "raw-data/Trump_tweet_chinese.csv",
+  "../raw-data/Trump_tweet_chinese.csv",
   "|",
   escape_double = FALSE,
   trim_ws = TRUE
@@ -61,7 +61,7 @@ freq_neg_tweet_chinese <- Trump_tweet_chinese %>%
             total_negative_trump = sum(negative > 0),
             total_tweet_trump = n())
 
-write.csv(freq_neg_tweet_chinese, file = 'processed-data/freq_neg_trump_chinese.csv')
+write.csv(freq_neg_tweet_chinese, file = '../processed-data/freq_neg_trump_chinese.csv')
 
 
 

@@ -13,12 +13,12 @@ library(dplyr)
 #######################################################################
 
 
-poverty <- read.csv("raw-data/Poverty_Status_ACS5_2018.csv", header=TRUE)
+poverty <- read.csv("../raw-data/Poverty_Status_ACS5_2018.csv", header=TRUE)
 # View(poverty)
 
 poverty <- poverty %>%
-  select(NAME, S1701_C03_001E) %>%
-  rename(pct_below_poverty_level = S1701_C03_001E, state=NAME) %>%
+  dplyr::select(NAME, S1701_C03_001E) %>%
+  dplyr::rename(pct_below_poverty_level = 'S1701_C03_001E', state=NAME) %>%
   slice(-c(1))
 
 poverty$pct_below_poverty_level <- as.numeric(levels(poverty$pct_below_poverty_level))[poverty$pct_below_poverty_level]
@@ -30,12 +30,12 @@ str(poverty)
 #######################################################################
 
 
-empl_HHincome <- read.csv("raw-data/EmploymentStatus_HHIncome_ACS5_2018.csv", header=TRUE)
+empl_HHincome <- read.csv("../raw-data/EmploymentStatus_HHIncome_ACS5_2018.csv", header=TRUE)
 # View(empl_HHincome)
 
 empl_HHincome <- empl_HHincome %>%
-  select(NAME, DP03_0009PE, DP03_0063E) %>%
-  rename(state=NAME, unemplyment_rate = DP03_0009PE, mean_HH_income = DP03_0063E) %>%
+  dplyr::select(NAME, DP03_0009PE, DP03_0063E) %>%
+  dplyr::rename(state=NAME, unemplyment_rate = DP03_0009PE, mean_HH_income = DP03_0063E) %>%
   slice(-c(1))
 
 str(empl_HHincome)
@@ -49,7 +49,7 @@ empl_HHincome$mean_HH_income <- as.numeric(levels(empl_HHincome$mean_HH_income))
 #######################################################################
 
 
-educ <- read.csv("raw-data/Education_Language_ACS_2018.csv", header=TRUE)
+educ <- read.csv("../raw-data/Education_Language_ACS_2018.csv", header=TRUE)
 # View(educ)
 
 ### Data Inspection
@@ -95,11 +95,11 @@ educ <- read.csv("raw-data/Education_Language_ACS_2018.csv", header=TRUE)
 # # 235 - 262
 
 educ <- educ %>%
-  select(NAME, c(235:262)) 
+  dplyr::select(NAME, c(235:262)) 
 
 
 educ <- educ %>%
-  select(NAME, ends_with("E"), ends_with("PE"))
+  dplyr::select(NAME, ends_with("E"), ends_with("PE"))
 
 # View(educ)
 str(educ)
@@ -117,11 +117,11 @@ str(educ)
 
 
 educ <- educ %>%
-  mutate( tot_less_than_high_school = rowSums(educ[, c("DP02_0059E", "DP02_0060E")], na.rm = TRUE)) %>% # taking together people with <9th grade and 9th to 12th grade
-  mutate( pct_less_than_high_school = rowSums(educ[, c("DP02_0059PE", "DP02_0060PE")], na.rm = TRUE)) %>%
-  mutate( tot_college_associate = rowSums(educ[, c("DP02_0062E", "DP02_0063E")], na.rm = TRUE)) %>% # group college and associate degree together
-  mutate( pct_college_associate = rowSums(educ[, c("DP02_0062PE", "DP02_0063PE")], na.rm = TRUE)) %>%
-  rename(state = NAME, tot_high_school_grad = "DP02_0061E", pct_high_school_grad = "DP02_0061PE",
+  dplyr::mutate( tot_less_than_high_school = rowSums(educ[, c("DP02_0059E", "DP02_0060E")], na.rm = TRUE)) %>% # taking together people with <9th grade and 9th to 12th grade
+  dplyr::mutate( pct_less_than_high_school = rowSums(educ[, c("DP02_0059PE", "DP02_0060PE")], na.rm = TRUE)) %>%
+  dplyr::mutate( tot_college_associate = rowSums(educ[, c("DP02_0062E", "DP02_0063E")], na.rm = TRUE)) %>% # group college and associate degree together
+  dplyr::mutate( pct_college_associate = rowSums(educ[, c("DP02_0062PE", "DP02_0063PE")], na.rm = TRUE)) %>%
+  dplyr::rename(state = NAME, tot_high_school_grad = "DP02_0061E", pct_high_school_grad = "DP02_0061PE",
          tot_bachelor = "DP02_0064E", pct_bachelor = "DP02_0064PE",
          tot_grad_prof_degree ="DP02_0065E", pct_grad_prof_degree = "DP02_0065PE") %>%
     slice(-c(1))
@@ -140,7 +140,7 @@ educ <- educ[,c(1,8,2,10,4,6,9,3,11,5,7)]
 
 
 
-factor_age_race <- read.csv("raw-data/Age_Race_ACS5_2018.csv", header=TRUE)
+factor_age_race <- read.csv("../raw-data/Age_Race_ACS5_2018.csv", header=TRUE)
 # View(factor_age_race)
 str(factor_age_race)
 
@@ -230,8 +230,8 @@ age_race<- age_race %>%
 
 
 age_race <- age_race %>%
-  select(NAME, DP05_0033E, DP05_0071E, DP05_0071PE, DP05_0046E, DP05_0046PE, DP05_0067E, DP05_0067PE, total_under_25, pct_under_25, total_25_44,  pct_25_44, total_45_64, pct_45_64, DP05_0024E, DP05_0024PE) %>%
-  rename(state=NAME, total_pop = DP05_0033E, total_hispanic = DP05_0071E, percent_hispanic=DP05_0071PE, total_chinese = DP05_0046E, percent_chinese=DP05_0046PE, total_asian = DP05_0067E, percent_asian = DP05_0067PE, total_65andover = DP05_0024E, pct_65andover = DP05_0024PE)%>%
+  dplyr::select(NAME, DP05_0033E, DP05_0071E, DP05_0071PE, DP05_0046E, DP05_0046PE, DP05_0067E, DP05_0067PE, total_under_25, pct_under_25, total_25_44,  pct_25_44, total_45_64, pct_45_64, DP05_0024E, DP05_0024PE) %>%
+  dplyr::rename(state=NAME, total_pop = DP05_0033E, total_hispanic = DP05_0071E, percent_hispanic=DP05_0071PE, total_chinese = DP05_0046E, percent_chinese=DP05_0046PE, total_asian = DP05_0067E, percent_asian = DP05_0067PE, total_65andover = DP05_0024E, pct_65andover = DP05_0024PE)%>%
   slice(-c(1))
 
 # View(age_race)
@@ -356,4 +356,4 @@ sociodemographics <- full_join(sociodemographics, vote, by = "state")
 View(sociodemographics)
 str(sociodemographics)
 
-save(sociodemographics, file = "processed-data/sociodemographics_data.Rdata")
+save(sociodemographics, file = "../processed-data/sociodemographics_data.Rdata")

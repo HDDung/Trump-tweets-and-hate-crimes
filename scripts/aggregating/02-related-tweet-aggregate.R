@@ -39,38 +39,38 @@ sentimentAnalyt <- function(processed_tweet){
   return(processed_tweet)
 }
 
-state_name_abb <- read_csv("raw-data/state_name_abb.csv")
+state_name_abb <- read_csv("../raw-data/state_name_abb.csv")
 
 ### Hispanic
 usa_tweets_hispanic <- c()
 for (index in 1:nrow(state_name_abb)){
   file <- paste(state_name_abb$state_name[index], "output_got.csv", sep="")
-  path <- paste("raw-data/Hispanic/", file, sep="")
+  path <- paste("../raw-data/Hispanic/", file, sep="")
   state_tweet <- read_csv(path)
   state_tweet <- preprocessTweet(state_tweet)
   state_tweet <- sentimentAnalyt(state_tweet)
   
   usa_tweets_hispanic <- rbind(usa_tweets_hispanic, state_tweet %>%
-          select(date, text_clean, WordCount, SentimentGI) %>%
+                                 dplyr::select(date, text_clean, WordCount, SentimentGI) %>%
           mutate(state = state_name_abb$state_abb[index]))
 }
 
-write.csv(usa_tweets_hispanic, file = "processed-data/usa_tweets_hispanic.csv", row.names = FALSE)
+write.csv(usa_tweets_hispanic, file = "../processed-data/usa_tweets_hispanic.csv", row.names = FALSE)
 
 
 ### Coronavirus
 usa_tweets_coronavirus <- c()
 for (index in 1:nrow(state_name_abb)){
   file <- paste(state_name_abb$state_name[index], "output_got.csv", sep="")
-  path <- paste("raw-data/Coronavirus/", file, sep="")
+  path <- paste("../raw-data/Coronavirus/", file, sep="")
   state_tweet <- read_csv(path)
   state_tweet <- preprocessTweet(state_tweet)
   state_tweet <- sentimentAnalyt(state_tweet)
   
   usa_tweets_coronavirus <- rbind(usa_tweets_coronavirus, state_tweet %>%
-                        select(date, text_clean, WordCount, SentimentGI) %>%
+                                    dplyr::select(date, text_clean, WordCount, SentimentGI) %>%
                         mutate(state = state_name_abb$state_abb[index]))
 }
 
-write.csv(usa_tweets_coronavirus, file = "processed-data/usa_tweets_coronavirus.csv", row.names = FALSE)
+write.csv(usa_tweets_coronavirus, file = "../processed-data/usa_tweets_coronavirus.csv", row.names = FALSE)
 

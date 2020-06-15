@@ -4,7 +4,7 @@ library(lubridate)
 library(readr)
 library(ggplot2)
 
-hate_crime <- read_csv("raw-data/hate_crime.csv")
+hate_crime <- read_csv("../raw-data/hate_crime.csv")
 hate_crime$INCIDENT_DATE <- dmy(hate_crime$INCIDENT_DATE)
 hate_crime$BIAS_DESC <- factor(hate_crime$BIAS_DESC)
 
@@ -12,7 +12,7 @@ hate_crime$BIAS_DESC <- factor(hate_crime$BIAS_DESC)
 
 incident_num_weekly <- 
   hate_crime %>% 
-  select(DATA_YEAR, 
+  dplyr::select(DATA_YEAR, 
          INCIDENT_DATE, 
          STATE_ABBR, 
          BIAS_DESC, 

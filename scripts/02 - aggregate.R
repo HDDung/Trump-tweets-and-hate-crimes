@@ -1,24 +1,24 @@
 #######################################################################
 ##### Cleaning and aggregating Internet access ######
 #######################################################################
-source("./scripts/aggregating/02-trump-aggregate.R")
+source("../scripts/aggregating/02-trump-aggregate.R")
 ## input: trump-tweets.RData
 ## output: freq_neg_trump.csv
 
 #######################################################################
 ##### Cleaning and aggregating Internet access ######
 #######################################################################
-source("./scripts/aggregating/02-related-tweet-aggregate.R")
+source("../scripts/aggregating/02-related-tweet-aggregate.R")
 ## input: related-tweets.csv
 ## output: hate-speed.RData
 
-load("processed-data/sociodemographics_data.Rdata")
+load("../processed-data/sociodemographics_data.Rdata")
 
 library(xml2)
 library(rvest)
 library(tidyr)
 
-twitter_usage <- read_csv("raw-data/twitter_usage_yearly.csv")
+twitter_usage <- read_csv("../raw-data/twitter_usage_yearly.csv")
 twitter_usage_state <- twitter_usage %>%
   group_by(state) %>%
   summarise(mean_usage14_15 = sum(total)/n())
@@ -48,7 +48,7 @@ data_hatecrime_trumptweet_hispanic <-
   freq_trump_hispanic %>%
   left_join(incident_num_weekly) %>%
   left_join(abb_state, by = c("state" = "Postal Code")) %>%
-  select(
+  dplyr::select(
     state,
     week,
     state_name,
@@ -64,7 +64,7 @@ data_hatecrime_trumptweet_hispanic <-
 View(data_hatecrime_trumptweet_hispanic)
 
 write.csv(data_hatecrime_trumptweet_hispanic,
-          file = "processed-data/data_hatecrime_trumptweet_hispanic.csv",
+          file = "../processed-data/data_hatecrime_trumptweet_hispanic.csv",
           row.names = FALSE)
 
 
@@ -90,7 +90,7 @@ data_usertweet_trumptweet_hispanic <-
   freq_trump_hispanic %>%
   left_join(usa_tweets_hispanic_weekly, by = c("week", "state")) %>%
   left_join(abb_state, by = c("state" = "Postal Code")) %>%
-  select(
+  dplyr::select(
     state,
     week,
     state_name,
@@ -109,7 +109,7 @@ data_usertweet_trumptweet_hispanic <-
 View(data_usertweet_trumptweet_hispanic)
 
 write.csv(data_usertweet_trumptweet_hispanic,
-          file = "processed-data/data_usertweet_trumptweet_hispanic.csv",
+          file = "../processed-data/data_usertweet_trumptweet_hispanic.csv",
           row.names = FALSE)
 
 #######################################################################
@@ -142,7 +142,7 @@ data_usertweet_trumptweet_chinese <-
   freq_trump_chinese %>%
   left_join(usa_tweets_chinese_weekly, by = c("week", "state")) %>%
   left_join(abb_state, by = c("state" = "Postal Code")) %>%
-  select(
+  dplyr::select(
     state,
     week,
     state_name,
@@ -161,7 +161,7 @@ data_usertweet_trumptweet_chinese <-
 View(data_usertweet_trumptweet_chinese)
 
 write.csv(data_usertweet_trumptweet_chinese,
-          file = "processed-data/data_usertweet_trumptweet_chinese.csv",
+          file = "../processed-data/data_usertweet_trumptweet_chinese.csv",
           row.names = FALSE)
 
 
